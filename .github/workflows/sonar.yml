@@ -1,0 +1,31 @@
+# SonarQube Cloud CI analysis (sq-vs-aikido benchmark). Builds with Maven so the Java analyzer
+# gets compiled classes and the full classpath. Runs on main only; not on pull requests.
+name: SonarQube Cloud analysis
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Build and analyze
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: >
+          mvn -B -DskipTests -Dspotless.check.skip=true -Dspotless.apply.skip=true
+          compile org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.host.url=https://sonarcloud.io
+          -Dsonar.organization=fabiolgo
+          -Dsonar.projectKey=fabiolgo_bench-WebGoat
